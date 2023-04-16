@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from "react";
-import logo from "./logo.svg";
 import "./App.css";
 import Web3 from "web3";
 import Voting from "./abis/Voting.json";
 
 const App = () => {
-  const [web3, setWeb3] = useState(null);
   const [account, setAccount] = useState([]);
   const [contract, setContract] = useState(null);
   const [candidate_name, setcandi_name] = useState("");
-  const [voter_name, setvoter_name] = useState("");
-  const [voterID, setvoterID] = useState("");
-  const [candidateID, setcandiID] = useState("");
-  const [Loader, setLoader] = useState(true);
+  const [candidates, setCandidates] = useState([]);
 
   const loadWeb3 = async () => {
     if (window.ethereum) {
@@ -33,7 +28,7 @@ const App = () => {
     const voting = Voting.networks[network_id];
 
     if (voting) {
-      setLoader(false);
+      console.log("Entered ");
 
       const contract = new web3.eth.Contract(Voting.abi, voting.address);
       setContract(contract);
@@ -43,6 +38,21 @@ const App = () => {
     loadWeb3();
     loadContract();
   }, []);
+  useEffect(() => {
+    const loadCandidates = async () => {
+      const candidateCount = await contract.methods.getCandidateCount().call();
+      const candidates = [];
+      for (let i = 0; i < candidateCount; i++) {
+        const candidate = await contract.methods.getCandidateById(i).call();
+        candidates.push(candidate);
+      }
+      setCandidates(candidates);
+      console.log(candidates);
+    };
+    if (contract !== null) {
+      loadCandidates();
+    }
+  }, [contract]);
   const AddCandidate = async (event) => {
     event.preventDefault();
     await contract.methods
@@ -52,15 +62,19 @@ const App = () => {
         console.log("candidate added");
         console.log(hash);
       });
-  };
-
-  const CreateVoter = async (event) => {
-    event.preventDefault();
-    console.log("Entered");
-  };
-
-  const CastVote = async (event) => {
-    event.preventDefault();
+      window.location.reload();
+    };
+  const CastVote = async (candidateId) => {
+    console.log("Andar aaa gaya")
+    await contract.methods.castVote(candidateId).send({ from: account });
+    const updatedCandidates = candidates.map((candidate) => {
+      if (candidate.id === candidateId) {
+        candidate.voteCount++;
+      }
+      return candidate;
+    });
+    setCandidates(updatedCandidates);
+    window.location.reload();
   };
   return (
     <div className="App">
@@ -87,27 +101,17 @@ const App = () => {
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>John Doe</td>
-            <td>5</td>
-            <td>
-              <button>Vote</button>
-            </td>
-          </tr>
-          <tr>
-            <td>Jane Doe</td>
-            <td>3</td>
-            <td>
-              <button>Vote</button>
-            </td>
-          </tr>
-          <tr>
-            <td>Bob Smith</td>
-            <td>2</td>
-            <td>
-              <button>Vote</button>
-            </td>
-          </tr>
+          {
+            candidates.map((candidate) => (
+            <tr key={candidate.id}>
+              <td>{candidate[1]}</td>
+              <td>{candidate[2]}</td>
+              <td>
+                <button onClick={() => CastVote(candidate[0])}>Vote</button>
+              </td>
+            </tr>
+          ))
+          }
         </tbody>
       </table>
     </div>
