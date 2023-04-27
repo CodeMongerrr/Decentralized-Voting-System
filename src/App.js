@@ -9,12 +9,13 @@ const App = () => {
   const [candidate_name, setcandi_name] = useState("");
   const [candidates, setCandidates] = useState([]);
 
+  const providerUrl = "https://rpc-mumbai.maticvigil.com";
   const loadWeb3 = async () => {
     if (window.ethereum) {
       window.web3 = new Web3(window.ethereum);
       await window.ethereum.enable();
     } else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider);
+      window.web3 = new Web3(providerUrl);
     } else {
       window.alert("Non Ethereum browser detected");
     }
@@ -62,11 +63,12 @@ const App = () => {
         console.log("candidate added");
         console.log(hash);
       });
-      window.location.reload();
-    };
+    window.location.reload();
+  };
   const CastVote = async (candidateId) => {
-    console.log("Andar aaa gaya")
+    console.log("Andar aaa gaya");
     await contract.methods.castVote(candidateId).send({ from: account });
+    console.log(account);
     const updatedCandidates = candidates.map((candidate) => {
       if (candidate.id === candidateId) {
         candidate.voteCount++;
@@ -88,8 +90,8 @@ const App = () => {
             setcandi_name(e.target.value);
           }}
         />
-        <button type="submit" onClick={AddCandidate}>
-          Add Candidate
+        <button >
+          Add Candidatetype="submit" onClick={AddCandidate}
         </button>
       </form>
       <table>
@@ -101,8 +103,7 @@ const App = () => {
           </tr>
         </thead>
         <tbody>
-          {
-            candidates.map((candidate) => (
+          {candidates.map((candidate) => (
             <tr key={candidate.id}>
               <td>{candidate[1]}</td>
               <td>{candidate[2]}</td>
@@ -110,8 +111,7 @@ const App = () => {
                 <button onClick={() => CastVote(candidate[0])}>Vote</button>
               </td>
             </tr>
-          ))
-          }
+          ))}
         </tbody>
       </table>
     </div>
